@@ -1,116 +1,501 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vehicle Speed Tracker - Live View</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #121212;
-            color: #e0e0e0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        h1 {
-            color: #ffffff;
-            margin-bottom: 20px;
-        }
-        .container {
-            text-align: center;
-            border: 2px solid #333;
-            border-radius: 10px;
-            padding: 20px;
-            background-color: #1e1e1e;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            max-width: 800px;
-            width: 95%;
-        }
-        #videoStream {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            border: 1px solid #444;
-            background-color: #000;
-        }
-        .info {
-            margin-top: 15px;
-            font-size: 1.1em;
-            color: #bbbbbb;
-        }
-        .status {
-            margin-top: 10px;
-            padding: 8px;
-            border-radius: 5px;
-            font-weight: bold;
-        }
-        .status.active {
-            background-color: #2a7f2a;
-        }
-        .status.inactive {
-            background-color: #7f2a2a;
-        }
-    </style>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.0">
+
+<title>Speed Tracker | Monitor</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+
+    margin: 0;
+
+    background: #080808;
+
+    color: white;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+}
+
+.header {
+
+    padding: 20px 30px;
+
+    border-bottom: 1px solid #222;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+}
+
+.logo {
+
+    font-size: 22px;
+
+    font-weight: bold;
+}
+
+.logo span {
+
+    color: #00ff88;
+}
+
+.connection {
+
+    padding: 8px 14px;
+
+    border-radius: 20px;
+
+    background: #171717;
+
+    font-size: 13px;
+}
+
+.dashboard {
+
+    max-width: 1400px;
+
+    margin: auto;
+
+    padding: 25px;
+}
+
+.video-card {
+
+    background: #111;
+
+    border: 1px solid #252525;
+
+    border-radius: 15px;
+
+    overflow: hidden;
+
+    position: relative;
+}
+
+.video-title {
+
+    padding: 15px 20px;
+
+    border-bottom: 1px solid #222;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+}
+
+.live {
+
+    color: #00ff88;
+
+    font-size: 13px;
+
+    font-weight: bold;
+}
+
+.video-wrapper {
+
+    background: black;
+
+    width: 100%;
+
+    text-align: center;
+}
+
+#video {
+
+    width: 100%;
+
+    max-height: 75vh;
+
+    object-fit: contain;
+
+    display: block;
+}
+
+.stats {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 15px;
+
+    margin-top: 20px;
+}
+
+.stat {
+
+    background: #111;
+
+    border: 1px solid #252525;
+
+    border-radius: 12px;
+
+    padding: 20px;
+}
+
+.stat-title {
+
+    color: #888;
+
+    font-size: 13px;
+
+    margin-bottom: 10px;
+}
+
+.stat-value {
+
+    font-size: 28px;
+
+    font-weight: bold;
+}
+
+.green {
+
+    color: #00ff88;
+}
+
+.yellow {
+
+    color: #ffff00;
+}
+
+.red {
+
+    color: #ff4444;
+}
+
+.instructions {
+
+    margin-top: 20px;
+
+    background: #101010;
+
+    border: 1px solid #222;
+
+    border-radius: 12px;
+
+    padding: 20px;
+
+    color: #999;
+
+    line-height: 1.7;
+}
+
+@media(max-width: 700px) {
+
+    .stats {
+
+        grid-template-columns:
+            1fr;
+    }
+
+    .header {
+
+        padding: 15px;
+    }
+
+    .dashboard {
+
+        padding: 12px;
+    }
+}
+
+</style>
+
 </head>
+
+
 <body>
-    <div class="container">
-        <h1>Vehicle Speed Tracker - Live View</h1>
-        <img src="{{ url_for('static', filename='placeholder.jpg') }}" id="videoStream" alt="Live Video Stream">
-        <div id="status" class="status inactive">Waiting for camera feed...</div>
-        <p class="info">Live feed from phone camera with speed detection...</p>
+
+
+<header class="header">
+
+    <div class="logo">
+
+        🚗 Speed<span>Tracker</span>
+
     </div>
 
-    <script>
-        const videoElement = document.getElementById('videoStream');
-        const statusElement = document.getElementById('status');
-        
-        // Create a placeholder image if needed
-        const canvas = document.createElement('canvas');
-        canvas.width = 640;
-        canvas.height = 480;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, 640, 480);
-        ctx.fillStyle = '#fff';
-        ctx.font = '20px Arial';
-        ctx.fillText('Waiting for camera feed...', 200, 240);
-        
-        // Convert canvas to data URL
-        const placeholderUrl = canvas.toDataURL('image/jpeg');
-        videoElement.src = placeholderUrl;
-        
-        // Function to update the video stream
-        function updateStream() {
-            fetch('/video_feed')
-                .then(response => {
-                    if (response.ok) {
-                        statusElement.textContent = 'Camera feed active';
-                        statusElement.className = 'status active';
-                        videoElement.src = '/video_feed';
-                    } else {
-                        statusElement.textContent = 'Camera feed not available';
-                        statusElement.className = 'status inactive';
-                        videoElement.src = placeholderUrl;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching stream:', error);
-                    statusElement.textContent = 'Error connecting to camera';
-                    statusElement.className = 'status inactive';
-                    videoElement.src = placeholderUrl;
-                });
+
+    <div
+        id="connection"
+        class="connection">
+
+        🔴 Camera Offline
+
+    </div>
+
+</header>
+
+
+<main class="dashboard">
+
+
+    <div class="video-card">
+
+
+        <div class="video-title">
+
+            <strong>
+                Live Road Monitoring
+            </strong>
+
+
+            <span class="live">
+
+                ● LIVE
+
+            </span>
+
+        </div>
+
+
+        <div class="video-wrapper">
+
+            <img
+                id="video"
+                src="/video_feed"
+                alt="Live Camera Feed">
+
+        </div>
+
+
+    </div>
+
+
+    <div class="stats">
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+
+                VEHICLES IN FRAME
+
+            </div>
+
+            <div
+                id="vehicles"
+                class="stat-value">
+
+                0
+
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+
+                HIGHEST SPEED
+
+            </div>
+
+            <div
+                id="highest"
+                class="stat-value green">
+
+                0 km/h
+
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+
+                TOTAL DETECTED
+
+            </div>
+
+            <div
+                id="total"
+                class="stat-value">
+
+                0
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <div class="instructions">
+
+        <strong>
+            📱 Camera Setup
+        </strong>
+
+        <br><br>
+
+        Open the <b>/phone</b> URL on your phone,
+        allow camera access and point the rear camera
+        towards the road.
+
+        <br><br>
+
+        Keep the phone and laptop connected to the
+        <b>same Wi-Fi network</b>.
+
+        <br><br>
+
+        This laptop page receives the camera feed,
+        processes it with OpenCV and estimates vehicle
+        speed.
+
+    </div>
+
+
+</main>
+
+
+<script>
+
+async function updateStatus() {
+
+    try {
+
+        const response =
+            await fetch("/status");
+
+
+        const data =
+            await response.json();
+
+
+        const connection =
+            document.getElementById(
+                "connection"
+            );
+
+
+        const vehicles =
+            document.getElementById(
+                "vehicles"
+            );
+
+
+        const highest =
+            document.getElementById(
+                "highest"
+            );
+
+
+        const total =
+            document.getElementById(
+                "total"
+            );
+
+
+        vehicles.textContent =
+            data.vehicles;
+
+
+        highest.textContent =
+            Math.round(
+                data.highest_speed
+            ) + " km/h";
+
+
+        total.textContent =
+            data.total_detected;
+
+
+        if (data.camera_active) {
+
+            connection.innerHTML =
+                "🟢 Camera Connected";
+
+            connection.style.color =
+                "#00ff88";
+
         }
-        
-        // Update stream every 5 seconds
-        setInterval(updateStream, 5000);
-        
-        // Initial update
-        updateStream();
-    </script>
+
+        else {
+
+            connection.innerHTML =
+                "🔴 Camera Offline";
+
+            connection.style.color =
+                "#ff4444";
+        }
+
+
+        // Speed status color
+
+        if (
+            data.highest_speed >= 60
+        ) {
+
+            highest.className =
+                "stat-value red";
+
+        }
+
+        else if (
+            data.highest_speed >= 40
+        ) {
+
+            highest.className =
+                "stat-value yellow";
+
+        }
+
+        else {
+
+            highest.className =
+                "stat-value green";
+        }
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+    }
+
+}
+
+
+setInterval(
+    updateStatus,
+    1000
+);
+
+
+updateStatus();
+
+</script>
+
+
 </body>
+
 </html>
