@@ -178,9 +178,16 @@ def process_frame(frame):
 
 # ... (previous code continues) ...
 
+# ... previous code continues ...
+
 def generate_frames():
     """Generate video frames for the laptop view"""
     global camera_active, frame_queue
+    
+    # Create a blank frame for when no phone feed is available
+    blank_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    cv2.putText(blank_frame, "Waiting for camera feed...", (100, 240), 
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
     
     # This loop will try to get frames from the phone's stream
     while True:
@@ -199,8 +206,17 @@ def generate_frames():
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
         else:
-            # If no frame from phone, wait a bit
-            time.sleep(0.01)
+            # If no frame from phone, send the blank frame
+            ret, buffer = cv2.imencode('.jpg', blank_frame)
+            frame_bytes = buffer.tobytes()
+            
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            
+            # Wait a bit before trying again
+            time.sleep(0.1)
+
+# ... rest of the code remains the same ...
 
 @app.route('/')
 def index():
