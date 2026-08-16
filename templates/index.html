@@ -6,10 +6,9 @@
 <meta charset="UTF-8">
 
 <meta name="viewport"
-      content="width=device-width,
-               initial-scale=1.0">
+content="width=device-width, initial-scale=1.0">
 
-<title>Speed Tracker | Monitor</title>
+<title>Speed Tracker V2</title>
 
 <style>
 
@@ -25,15 +24,12 @@ body {
 
     color: white;
 
-    font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
+    font-family: Arial, sans-serif;
 }
 
 .header {
 
-    padding: 20px 30px;
+    padding: 18px 25px;
 
     border-bottom: 1px solid #222;
 
@@ -62,18 +58,18 @@ body {
 
     border-radius: 20px;
 
-    background: #171717;
+    background: #151515;
 
     font-size: 13px;
 }
 
 .dashboard {
 
-    max-width: 1400px;
+    max-width: 1450px;
 
     margin: auto;
 
-    padding: 25px;
+    padding: 20px;
 }
 
 .video-card {
@@ -82,40 +78,34 @@ body {
 
     border: 1px solid #252525;
 
-    border-radius: 15px;
+    border-radius: 14px;
 
     overflow: hidden;
-
-    position: relative;
 }
 
-.video-title {
+.video-header {
 
     padding: 15px 20px;
-
-    border-bottom: 1px solid #222;
 
     display: flex;
 
     justify-content: space-between;
 
-    align-items: center;
+    border-bottom: 1px solid #222;
 }
 
 .live {
 
     color: #00ff88;
 
-    font-size: 13px;
-
     font-weight: bold;
+
+    font-size: 13px;
 }
 
 .video-wrapper {
 
     background: black;
-
-    width: 100%;
 
     text-align: center;
 }
@@ -124,7 +114,7 @@ body {
 
     width: 100%;
 
-    max-height: 75vh;
+    max-height: 70vh;
 
     object-fit: contain;
 
@@ -136,11 +126,11 @@ body {
     display: grid;
 
     grid-template-columns:
-        repeat(3, 1fr);
+    repeat(3, 1fr);
 
     gap: 15px;
 
-    margin-top: 20px;
+    margin-top: 18px;
 }
 
 .stat {
@@ -151,16 +141,14 @@ body {
 
     border-radius: 12px;
 
-    padding: 20px;
+    padding: 18px;
 }
 
 .stat-title {
 
-    color: #888;
+    color: #777;
 
-    font-size: 13px;
-
-    margin-bottom: 10px;
+    font-size: 12px;
 }
 
 .stat-value {
@@ -168,6 +156,8 @@ body {
     font-size: 28px;
 
     font-weight: bold;
+
+    margin-top: 8px;
 }
 
 .green {
@@ -185,39 +175,87 @@ body {
     color: #ff4444;
 }
 
-.instructions {
+.panel {
 
-    margin-top: 20px;
+    margin-top: 18px;
 
-    background: #101010;
+    background: #111;
 
-    border: 1px solid #222;
+    border: 1px solid #252525;
 
     border-radius: 12px;
 
-    padding: 20px;
+    overflow: hidden;
+}
 
-    color: #999;
+.panel-title {
 
-    line-height: 1.7;
+    padding: 15px 18px;
+
+    font-weight: bold;
+
+    border-bottom: 1px solid #222;
+}
+
+table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+}
+
+th, td {
+
+    padding: 13px;
+
+    text-align: left;
+
+    border-bottom: 1px solid #202020;
+
+    font-size: 14px;
+}
+
+th {
+
+    color: #777;
+
+    font-size: 11px;
+}
+
+.status-normal {
+
+    color: #00ff88;
+}
+
+.status-moderate {
+
+    color: #ffff00;
+}
+
+.status-speeding {
+
+    color: #ff4444;
+}
+
+.empty {
+
+    color: #666;
+
+    text-align: center;
+
+    padding: 25px;
 }
 
 @media(max-width: 700px) {
 
     .stats {
 
-        grid-template-columns:
-            1fr;
-    }
-
-    .header {
-
-        padding: 15px;
+        grid-template-columns: 1fr;
     }
 
     .dashboard {
 
-        padding: 12px;
+        padding: 10px;
     }
 }
 
@@ -228,19 +266,15 @@ body {
 
 <body>
 
-
 <header class="header">
 
     <div class="logo">
-
-        🚗 Speed<span>Tracker</span>
-
+        🚗 Speed<span>Tracker</span> V2
     </div>
 
-
     <div
-        id="connection"
-        class="connection">
+    id="connection"
+    class="connection">
 
         🔴 Camera Offline
 
@@ -252,52 +286,46 @@ body {
 <main class="dashboard">
 
 
+    <!-- VIDEO -->
+
     <div class="video-card">
 
-
-        <div class="video-title">
+        <div class="video-header">
 
             <strong>
                 Live Road Monitoring
             </strong>
 
-
             <span class="live">
-
                 ● LIVE
-
             </span>
 
         </div>
 
-
         <div class="video-wrapper">
 
             <img
-                id="video"
-                src="/video_feed"
-                alt="Live Camera Feed">
+            id="video"
+            src="/video_feed">
 
         </div>
-
 
     </div>
 
 
-    <div class="stats">
+    <!-- STATS -->
 
+    <div class="stats">
 
         <div class="stat">
 
             <div class="stat-title">
-
                 VEHICLES IN FRAME
-
             </div>
 
             <div
-                id="vehicles"
-                class="stat-value">
+            id="vehicleCount"
+            class="stat-value">
 
                 0
 
@@ -309,14 +337,12 @@ body {
         <div class="stat">
 
             <div class="stat-title">
-
                 HIGHEST SPEED
-
             </div>
 
             <div
-                id="highest"
-                class="stat-value green">
+            id="highestSpeed"
+            class="stat-value green">
 
                 0 km/h
 
@@ -328,14 +354,12 @@ body {
         <div class="stat">
 
             <div class="stat-title">
-
                 TOTAL DETECTED
-
             </div>
 
             <div
-                id="total"
-                class="stat-value">
+            id="totalDetected"
+            class="stat-value">
 
                 0
 
@@ -343,89 +367,128 @@ body {
 
         </div>
 
+    </div>
+
+
+    <!-- LIVE VEHICLES -->
+
+    <div class="panel">
+
+        <div class="panel-title">
+            🚦 Live Vehicles
+        </div>
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+
+                    <th>TYPE</th>
+
+                    <th>SPEED</th>
+
+                    <th>MAX SPEED</th>
+
+                    <th>STATUS</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody
+            id="liveVehicles">
+
+                <tr>
+
+                    <td
+                    colspan="5"
+                    class="empty">
+
+                        No vehicles detected
+
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
 
     </div>
 
 
-    <div class="instructions">
+    <!-- HISTORY -->
 
-        <strong>
-            📱 Camera Setup
-        </strong>
+    <div class="panel">
 
-        <br><br>
+        <div class="panel-title">
+            📋 Vehicle History
+        </div>
 
-        Open the <b>/phone</b> URL on your phone,
-        allow camera access and point the rear camera
-        towards the road.
+        <table>
 
-        <br><br>
+            <thead>
 
-        Keep the phone and laptop connected to the
-        <b>same Wi-Fi network</b>.
+                <tr>
 
-        <br><br>
+                    <th>ID</th>
 
-        This laptop page receives the camera feed,
-        processes it with OpenCV and estimates vehicle
-        speed.
+                    <th>TYPE</th>
+
+                    <th>MAX SPEED</th>
+
+                    <th>TIME</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody
+            id="history">
+
+                <tr>
+
+                    <td
+                    colspan="4"
+                    class="empty">
+
+                        No history yet
+
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
 
     </div>
-
 
 </main>
 
 
 <script>
 
-async function updateStatus() {
+async function updateDashboard() {
 
     try {
 
         const response =
             await fetch("/status");
 
-
         const data =
             await response.json();
 
+
+        // Connection
 
         const connection =
             document.getElementById(
                 "connection"
             );
-
-
-        const vehicles =
-            document.getElementById(
-                "vehicles"
-            );
-
-
-        const highest =
-            document.getElementById(
-                "highest"
-            );
-
-
-        const total =
-            document.getElementById(
-                "total"
-            );
-
-
-        vehicles.textContent =
-            data.vehicles;
-
-
-        highest.textContent =
-            Math.round(
-                data.highest_speed
-            ) + " km/h";
-
-
-        total.textContent =
-            data.total_detected;
 
 
         if (data.camera_active) {
@@ -436,9 +499,7 @@ async function updateStatus() {
             connection.style.color =
                 "#00ff88";
 
-        }
-
-        else {
+        } else {
 
             connection.innerHTML =
                 "🔴 Camera Offline";
@@ -448,53 +509,212 @@ async function updateStatus() {
         }
 
 
-        // Speed status color
+        // Stats
+
+        document.getElementById(
+            "vehicleCount"
+        ).textContent =
+            data.vehicle_count;
+
+
+        document.getElementById(
+            "highestSpeed"
+        ).textContent =
+            Math.round(
+                data.highest_speed
+            ) + " km/h";
+
+
+        document.getElementById(
+            "totalDetected"
+        ).textContent =
+            data.total_detected;
+
+
+        // Highest speed color
+
+        const highest =
+            document.getElementById(
+                "highestSpeed"
+            );
+
+
+        highest.className =
+            "stat-value " +
+            (
+                data.highest_speed >= 60
+                ? "red"
+                : data.highest_speed >= 40
+                ? "yellow"
+                : "green"
+            );
+
+
+        // ----------------------------------------------------
+        // LIVE VEHICLES
+        // ----------------------------------------------------
+
+        const live =
+            document.getElementById(
+                "liveVehicles"
+            );
+
 
         if (
-            data.highest_speed >= 60
+            data.vehicles.length === 0
         ) {
 
-            highest.className =
-                "stat-value red";
+            live.innerHTML = `
+                <tr>
+                    <td colspan="5"
+                    class="empty">
+                    No vehicles detected
+                    </td>
+                </tr>
+            `;
 
+        } else {
+
+            live.innerHTML =
+                data.vehicles.map(
+                    vehicle => {
+
+                        let statusClass =
+                            "status-normal";
+
+                        if (
+                            vehicle.status
+                            === "MODERATE"
+                        ) {
+
+                            statusClass =
+                                "status-moderate";
+
+                        }
+
+                        if (
+                            vehicle.status
+                            === "SPEEDING"
+                        ) {
+
+                            statusClass =
+                                "status-speeding";
+                        }
+
+
+                        return `
+                        <tr>
+
+                            <td>
+                                #${vehicle.id}
+                            </td>
+
+                            <td>
+                                ${vehicle.type}
+                            </td>
+
+                            <td>
+                                <b>
+                                ${Math.round(
+                                    vehicle.speed
+                                )} km/h
+                                </b>
+                            </td>
+
+                            <td>
+                                ${Math.round(
+                                    vehicle.max_speed
+                                )} km/h
+                            </td>
+
+                            <td class="${statusClass}">
+                                ${vehicle.status}
+                            </td>
+
+                        </tr>
+                        `;
+
+                    }
+                ).join("");
         }
 
-        else if (
-            data.highest_speed >= 40
+
+        // ----------------------------------------------------
+        // HISTORY
+        // ----------------------------------------------------
+
+        const history =
+            document.getElementById(
+                "history"
+            );
+
+
+        if (
+            data.history.length === 0
         ) {
 
-            highest.className =
-                "stat-value yellow";
+            history.innerHTML = `
+                <tr>
+                    <td colspan="4"
+                    class="empty">
+                    No history yet
+                    </td>
+                </tr>
+            `;
 
-        }
+        } else {
 
-        else {
+            history.innerHTML =
+                [...data.history]
+                .reverse()
+                .map(
+                    item => `
+                    <tr>
 
-            highest.className =
-                "stat-value green";
+                        <td>
+                            #${item.id}
+                        </td>
+
+                        <td>
+                            ${item.type}
+                        </td>
+
+                        <td>
+                            ${item.max_speed}
+                            km/h
+                        </td>
+
+                        <td>
+                            ${item.time}
+                        </td>
+
+                    </tr>
+                    `
+                ).join("");
         }
 
     }
 
     catch(error) {
 
-        console.error(error);
-
+        console.error(
+            "Dashboard error:",
+            error
+        );
     }
-
 }
 
 
+// Update every second
+
 setInterval(
-    updateStatus,
+    updateDashboard,
     1000
 );
 
-
-updateStatus();
+updateDashboard();
 
 </script>
-
 
 </body>
 
