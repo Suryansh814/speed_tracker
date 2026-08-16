@@ -1,40 +1,89 @@
 import cv2
 import numpy as np
 from flask import Flask, render_template, Response, request, jsonify
-import time
+from ultralytics import YOLO
 import threading
 import queue
 import socket
+import time
 
 app = Flask(__name__)
+
+# ============================================================
+# CONFIGURATION
+# ============================================================
+
+HOST = "0.0.0.0"
+PORT = 5000
+
+# YOLO model
+MODEL_NAME = "yolo11n.pt"
+
+# ------------------------------------------------------------
+# SPEED CALIBRATION
+# ------------------------------------------------------------
+# IMPORTANT:
+# This value depends on your camera position and road.
+# We will calibrate this properly after road testing.
+#
+# Example:
+# 0.05 means approximately 5 cm per pixel.
+#
+PIXEL_TO_METER_RATIO = 0.05
+
+# Speed limits
+NORMAL_SPEED = 40
+MODERATE_SPEED = 60
+
+# Maximum speed accepted
+MAX_SPEED = 200
+
+
+# ============================================================
+# YOLO
+# ============================================================
+
+print("Loading YOLO model...")
+
+model = YOLO(MODEL_NAME)
+
+print("YOLO model loaded.")
+
+
+# ============================================================
+# COCO VEHICLE CLASSES
+# ============================================================
+
+VEHICLE_CLASSES = {
+    1: "Bicycle",
+    2: "Car",
+    3: "Motorcycle",
+    5: "Bus",
+    7: "Truck"
+}
+
 
 # ============================================================
 # GLOBAL STATE
 # ============================================================
 
 vehicles = {}
-vehicle_counter = 0
 
-lock = threading.Lock()
+vehicle_history = []
 
-# Speed settings
-PIXEL_TO_METER_RATIO = 0.05
-NORMAL_SPEED = 40
-MODERATE_SPEED = 60
+frame_queue = queue.Queue(maxsize=2)
 
-# Frames coming from phone
-frame_queue = queue.Queue(maxsize=3)
-
-# Latest processed frame for laptop monitor
 latest_processed_frame = None
 
-# Camera connection information
 camera_active = False
+
 last_frame_time = 0
 
-# Statistics
-total_detected = 0
 highest_speed = 0
+
+total_detected = 0
+
+lock = threading.Lock()
 
 
 # ============================================================
@@ -42,291 +91,362 @@ highest_speed = 0
 # ============================================================
 
 def get_local_ip():
-    """Get laptop's local IP address."""
 
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        s = socket.socket(
+            socket.AF_INET,
+            socket.SOCK_DGRAM
+        )
+
         s.connect(("8.8.8.8", 80))
+
         ip = s.getsockname()[0]
+
         s.close()
+
         return ip
 
     except Exception:
+
         return "127.0.0.1"
-
-
-# ============================================================
-# SPEED CALCULATION
-# ============================================================
-
-def calculate_speed(vehicle_data, current_position, current_time):
-    """Calculate vehicle speed using pixel movement."""
-
-    if len(vehicle_data["history"]) < 2:
-        return 0
-
-    last_pos, last_time = vehicle_data["history"][-2]
-
-    distance_pixels = np.sqrt(
-        (current_position[0] - last_pos[0]) ** 2 +
-        (current_position[1] - last_pos[1]) ** 2
-    )
-
-    distance_meters = distance_pixels * PIXEL_TO_METER_RATIO
-
-    time_seconds = current_time - last_time
-
-    if time_seconds <= 0:
-        return 0
-
-    speed_ms = distance_meters / time_seconds
-    speed_kmh = speed_ms * 3.6
-
-    return min(speed_kmh, 200)
 
 
 # ============================================================
 # SPEED COLOR
 # ============================================================
 
-def get_box_color(speed):
+def get_speed_color(speed):
 
     if speed < NORMAL_SPEED:
-        return (0, 255, 0)       # Green
+
+        return (0, 255, 0)
 
     elif speed < MODERATE_SPEED:
-        return (0, 255, 255)     # Yellow
+
+        return (0, 255, 255)
 
     else:
-        return (0, 0, 255)       # Red
+
+        return (0, 0, 255)
+
+
+def get_speed_status(speed):
+
+    if speed < NORMAL_SPEED:
+
+        return "NORMAL"
+
+    elif speed < MODERATE_SPEED:
+
+        return "MODERATE"
+
+    else:
+
+        return "SPEEDING"
 
 
 # ============================================================
-# VEHICLE DETECTION
+# SPEED CALCULATION
 # ============================================================
 
-def detect_vehicle(frame):
-    """
-    Experimental vehicle detection using OpenCV contours.
-    This is NOT AI/YOLO detection.
-    """
+def calculate_speed(vehicle, current_position, current_time):
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    history = vehicle["history"]
 
-    blurred = cv2.GaussianBlur(
-        gray,
-        (21, 21),
-        0
+    if len(history) < 2:
+
+        return 0
+
+    # Use a previous stable position instead of
+    # only the immediately previous frame.
+    previous_position, previous_time = history[-2]
+
+    distance_pixels = np.sqrt(
+        (
+            current_position[0]
+            - previous_position[0]
+        ) ** 2
+        +
+        (
+            current_position[1]
+            - previous_position[1]
+        ) ** 2
     )
 
-    edges = cv2.Canny(
-        blurred,
-        50,
-        150
+    distance_meters = (
+        distance_pixels
+        * PIXEL_TO_METER_RATIO
     )
 
-    kernel = cv2.getStructuringElement(
-        cv2.MORPH_ELLIPSE,
-        (3, 3)
+    time_seconds = (
+        current_time
+        - previous_time
     )
 
-    edges = cv2.dilate(
-        edges,
-        kernel,
-        iterations=2
+    if time_seconds <= 0:
+
+        return 0
+
+    speed_ms = (
+        distance_meters
+        / time_seconds
     )
 
-    contours, _ = cv2.findContours(
-        edges,
-        cv2.RETR_EXTERNAL,
-        cv2.CHAIN_APPROX_SIMPLE
-    )
+    speed_kmh = speed_ms * 3.6
 
-    vehicles_found = []
+    # Remove unrealistic spikes
+    if speed_kmh > MAX_SPEED:
 
-    for contour in contours:
+        return vehicle.get(
+            "speed",
+            0
+        )
 
-        area = cv2.contourArea(contour)
-
-        if 1000 < area < 50000:
-
-            x, y, w, h = cv2.boundingRect(contour)
-
-            aspect_ratio = w / float(h)
-
-            if 0.5 < aspect_ratio < 3.0:
-
-                vehicles_found.append(
-                    (x, y, w, h)
-                )
-
-    return vehicles_found
+    return speed_kmh
 
 
 # ============================================================
-# FRAME PROCESSING
+# PROCESS FRAME
 # ============================================================
 
 def process_frame(frame):
 
-    global vehicle_counter
-    global total_detected
     global highest_speed
+    global total_detected
 
     current_time = time.time()
 
-    vehicles_found = detect_vehicle(frame)
+    # --------------------------------------------------------
+    # YOLO TRACKING
+    # --------------------------------------------------------
 
-    with lock:
+    results = model.track(
+        frame,
+        persist=True,
+        classes=list(VEHICLE_CLASSES.keys()),
+        conf=0.40,
+        iou=0.50,
+        verbose=False
+    )
 
-        # ----------------------------------------------------
-        # Remove old vehicles
-        # ----------------------------------------------------
+    if not results:
 
-        vehicles_to_remove = []
+        return frame
 
-        for vid, vehicle in vehicles.items():
+    result = results[0]
 
-            if current_time - vehicle["last_seen"] > 1.5:
+    boxes = result.boxes
 
-                vehicles_to_remove.append(vid)
+    detected_ids = set()
 
-        for vid in vehicles_to_remove:
+    # --------------------------------------------------------
+    # DETECTIONS
+    # --------------------------------------------------------
 
-            del vehicles[vid]
+    if boxes is not None and len(boxes) > 0:
 
-        # ----------------------------------------------------
-        # Match detected objects
-        # ----------------------------------------------------
+        for box in boxes:
 
-        used_vehicle_ids = set()
+            if box.id is None:
 
-        for x, y, w, h in vehicles_found:
+                continue
 
-            center = (
-                x + w // 2,
-                y + h // 2
+            track_id = int(
+                box.id.item()
             )
 
-            matched_vid = None
+            class_id = int(
+                box.cls.item()
+            )
 
-            smallest_distance = float("inf")
+            confidence = float(
+                box.conf.item()
+            )
 
-            for vid, vehicle in vehicles.items():
+            if class_id not in VEHICLE_CLASSES:
 
-                if vid in used_vehicle_ids:
-                    continue
+                continue
 
-                last_position = vehicle["position"]
+            vehicle_type = VEHICLE_CLASSES[
+                class_id
+            ]
 
-                distance = np.sqrt(
-                    (center[0] - last_position[0]) ** 2 +
-                    (center[1] - last_position[1]) ** 2
-                )
+            # ------------------------------------------------
+            # Bounding box
+            # ------------------------------------------------
 
-                if distance < 80 and distance < smallest_distance:
+            x1, y1, x2, y2 = map(
+                int,
+                box.xyxy[0].tolist()
+            )
 
-                    smallest_distance = distance
-                    matched_vid = vid
+            center_x = int(
+                (x1 + x2) / 2
+            )
+
+            center_y = int(
+                (y1 + y2) / 2
+            )
+
+            center = (
+                center_x,
+                center_y
+            )
+
+            detected_ids.add(track_id)
 
             # ------------------------------------------------
             # New vehicle
             # ------------------------------------------------
 
-            if matched_vid is None:
+            with lock:
 
-                vehicle_counter += 1
+                if track_id not in vehicles:
 
-                matched_vid = vehicle_counter
+                    vehicles[track_id] = {
 
-                vehicles[matched_vid] = {
+                        "id": track_id,
 
-                    "id": matched_vid,
+                        "type": vehicle_type,
 
-                    "position": center,
+                        "position": center,
 
-                    "history": [
-                        (center, current_time)
-                    ],
+                        "history": [
+                            (
+                                center,
+                                current_time
+                            )
+                        ],
 
-                    "last_seen": current_time,
+                        "speed": 0,
 
-                    "speed": 0
-                }
+                        "last_seen":
+                            current_time,
 
-                total_detected += 1
+                        "max_speed": 0
+                    }
+
+                    total_detected += 1
+
+                vehicle = vehicles[
+                    track_id
+                ]
+
+                # ------------------------------------------------
+                # Update position
+                # ------------------------------------------------
+
+                vehicle["position"] = center
+
+                vehicle["type"] = vehicle_type
+
+                vehicle["history"].append(
+                    (
+                        center,
+                        current_time
+                    )
+                )
+
+                # Keep last 10 positions
+                if len(
+                    vehicle["history"]
+                ) > 10:
+
+                    vehicle["history"] = \
+                        vehicle[
+                            "history"
+                        ][-10:]
+
+                vehicle["last_seen"] = \
+                    current_time
+
+                # ------------------------------------------------
+                # Calculate speed
+                # ------------------------------------------------
+
+                speed = calculate_speed(
+                    vehicle,
+                    center,
+                    current_time
+                )
+
+                # Smooth speed
+                old_speed = vehicle[
+                    "speed"
+                ]
+
+                if old_speed > 0:
+
+                    speed = (
+                        old_speed * 0.65
+                        +
+                        speed * 0.35
+                    )
+
+                vehicle["speed"] = speed
+
+                if speed > vehicle[
+                    "max_speed"
+                ]:
+
+                    vehicle[
+                        "max_speed"
+                    ] = speed
+
+                if speed > highest_speed:
+
+                    highest_speed = speed
 
             # ------------------------------------------------
-            # Update vehicle
+            # DRAW
             # ------------------------------------------------
 
-            vehicle = vehicles[matched_vid]
-
-            used_vehicle_ids.add(matched_vid)
-
-            vehicle["position"] = center
-
-            vehicle["history"].append(
-                (center, current_time)
+            color = get_speed_color(
+                speed
             )
 
-            if len(vehicle["history"]) > 10:
-
-                vehicle["history"] = \
-                    vehicle["history"][-10:]
-
-            vehicle["last_seen"] = current_time
-
-            # ------------------------------------------------
-            # Calculate speed
-            # ------------------------------------------------
-
-            speed = calculate_speed(
-                vehicle,
-                center,
-                current_time
+            status = get_speed_status(
+                speed
             )
 
-            vehicle["speed"] = speed
-
-            if speed > highest_speed:
-
-                highest_speed = speed
-
-        # ----------------------------------------------------
-        # Draw vehicle information
-        # ----------------------------------------------------
-
-        for vid, vehicle in vehicles.items():
-
-            speed = vehicle["speed"]
-
-            color = get_box_color(speed)
-
-            cx, cy = vehicle["position"]
-
-            # Dynamic box
-            x = cx - 40
-            y = cy - 30
-
-            w = 80
-            h = 60
-
+            # Bounding box
             cv2.rectangle(
                 frame,
-                (x, y),
-                (x + w, y + h),
+                (x1, y1),
+                (x2, y2),
                 color,
-                2
+                3
             )
 
-            # Vehicle ID
+            # ------------------------------------------------
+            # Label background
+            # ------------------------------------------------
+
+            label = (
+                f"#{track_id} "
+                f"{vehicle_type}"
+            )
+
+            speed_label = (
+                f"{int(speed)} km/h"
+            )
+
+            status_label = status
+
+            # Label positions
+            label_y = max(
+                y1 - 10,
+                25
+            )
+
+            # Vehicle name
             cv2.putText(
                 frame,
-                f"CAR #{vehicle['id']}",
-                (x, y - 25),
+                label,
+                (x1, label_y),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.55,
+                0.65,
                 color,
                 2
             )
@@ -334,29 +454,104 @@ def process_frame(frame):
             # Speed
             cv2.putText(
                 frame,
-                f"{int(speed)} km/h",
-                (x, y - 5),
+                speed_label,
+                (
+                    x1,
+                    y2 + 25
+                ),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
+                0.65,
+                color,
+                2
+            )
+
+            # Status
+            cv2.putText(
+                frame,
+                status_label,
+                (
+                    x1,
+                    y2 + 50
+                ),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
                 color,
                 2
             )
 
     # ========================================================
+    # REMOVE OLD VEHICLES
+    # ========================================================
+
+    with lock:
+
+        expired = []
+
+        for vid, vehicle in vehicles.items():
+
+            if (
+                current_time
+                - vehicle["last_seen"]
+                > 2.5
+            ):
+
+                expired.append(
+                    vid
+                )
+
+        for vid in expired:
+
+            vehicle = vehicles[
+                vid
+            ]
+
+            # Save final history
+            vehicle_history.append({
+
+                "id": vehicle["id"],
+
+                "type": vehicle["type"],
+
+                "max_speed": round(
+                    vehicle["max_speed"],
+                    1
+                ),
+
+                "time": time.strftime(
+                    "%H:%M:%S"
+                )
+            })
+
+            del vehicles[vid]
+
+    # ========================================================
     # DASHBOARD OVERLAY
     # ========================================================
 
+    overlay_height = 110
+
+    overlay = frame.copy()
+
     cv2.rectangle(
-        frame,
+        overlay,
         (10, 10),
-        (300, 120),
-        (20, 20, 20),
+        (330, overlay_height),
+        (10, 10, 10),
         -1
+    )
+
+    cv2.addWeighted(
+        overlay,
+        0.80,
+        frame,
+        0.20,
+        0,
+        frame
     )
 
     cv2.putText(
         frame,
-        "REAL-TIME SPEED TRACKER",
+        "REAL-TIME VEHICLE TRACKER",
         (20, 35),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.55,
@@ -386,10 +581,10 @@ def process_frame(frame):
 
     cv2.putText(
         frame,
-        "PHONE CAMERA CONNECTED",
-        (20, 110),
+        "YOLO VEHICLE DETECTION",
+        (20, 105),
         cv2.FONT_HERSHEY_SIMPLEX,
-        0.45,
+        0.40,
         (0, 255, 0),
         1
     )
@@ -398,7 +593,7 @@ def process_frame(frame):
 
 
 # ============================================================
-# PROCESSOR THREAD
+# FRAME PROCESSOR
 # ============================================================
 
 def frame_processor():
@@ -419,16 +614,20 @@ def frame_processor():
 
         try:
 
-            processed = process_frame(frame)
+            processed_frame = \
+                process_frame(frame)
 
-            success, encoded = cv2.imencode(
-                ".jpg",
-                processed,
-                [
-                    int(cv2.IMWRITE_JPEG_QUALITY),
-                    80
-                ]
-            )
+            success, encoded = \
+                cv2.imencode(
+                    ".jpg",
+                    processed_frame,
+                    [
+                        int(
+                            cv2.IMWRITE_JPEG_QUALITY
+                        ),
+                        80
+                    ]
+                )
 
             if success:
 
@@ -440,12 +639,11 @@ def frame_processor():
         except Exception as e:
 
             print(
-                "Frame processing error:",
+                "Processing error:",
                 e
             )
 
 
-# Start processing thread
 processor_thread = threading.Thread(
     target=frame_processor,
     daemon=True
@@ -468,9 +666,9 @@ def generate_frames():
     cv2.putText(
         blank,
         "WAITING FOR PHONE CAMERA...",
-        (110, 230),
+        (100, 220),
         cv2.FONT_HERSHEY_SIMPLEX,
-        0.9,
+        0.8,
         (255, 255, 255),
         2
     )
@@ -478,39 +676,41 @@ def generate_frames():
     cv2.putText(
         blank,
         "Open /phone on your phone",
-        (140, 270),
+        (130, 260),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.6,
-        (180, 180, 180),
+        (170, 170, 170),
         1
     )
 
-    success, encoded_blank = cv2.imencode(
+    _, blank_encoded = cv2.imencode(
         ".jpg",
         blank
     )
 
-    blank_bytes = encoded_blank.tobytes()
+    blank_bytes = \
+        blank_encoded.tobytes()
 
     while True:
 
         with lock:
 
-            frame = latest_processed_frame
+            current_frame = \
+                latest_processed_frame
 
-        if frame is None:
+        if current_frame is None:
 
             frame_bytes = blank_bytes
 
         else:
 
-            frame_bytes = frame
+            frame_bytes = current_frame
 
         yield (
             b"--frame\r\n"
             b"Content-Type: image/jpeg\r\n\r\n"
-            + frame_bytes +
-            b"\r\n"
+            + frame_bytes
+            + b"\r\n"
         )
 
         time.sleep(0.03)
@@ -549,12 +749,13 @@ def video_feed():
 
     return Response(
         generate_frames(),
-        mimetype="multipart/x-mixed-replace; boundary=frame"
+        mimetype=
+        "multipart/x-mixed-replace; boundary=frame"
     )
 
 
 # ============================================================
-# PHONE FRAME UPLOAD
+# PHONE CAMERA UPLOAD
 # ============================================================
 
 @app.route(
@@ -571,11 +772,12 @@ def upload_frame():
         if "image" not in request.files:
 
             return jsonify({
-                "status": "error",
-                "message": "No image received"
+                "status": "error"
             }), 400
 
-        file = request.files["image"].read()
+        file = request.files[
+            "image"
+        ].read()
 
         npimg = np.frombuffer(
             file,
@@ -590,11 +792,10 @@ def upload_frame():
         if frame is None:
 
             return jsonify({
-                "status": "error",
-                "message": "Invalid image"
+                "status": "error"
             }), 400
 
-        # Resize for performance
+        # Standard processing size
         frame = cv2.resize(
             frame,
             (640, 480)
@@ -603,9 +804,11 @@ def upload_frame():
         if frame_queue.full():
 
             try:
+
                 frame_queue.get_nowait()
 
             except queue.Empty:
+
                 pass
 
         frame_queue.put_nowait(
@@ -613,7 +816,9 @@ def upload_frame():
         )
 
         camera_active = True
-        last_frame_time = time.time()
+
+        last_frame_time = \
+            time.time()
 
         return jsonify({
             "status": "success"
@@ -641,32 +846,72 @@ def status():
 
     global camera_active
 
-    if time.time() - last_frame_time > 3:
+    if (
+        time.time()
+        - last_frame_time
+        > 3
+    ):
 
         camera_active = False
 
     with lock:
 
-        vehicle_count = len(vehicles)
+        current_vehicles = []
 
-        current_highest = highest_speed
+        for vehicle in vehicles.values():
+
+            current_vehicles.append({
+
+                "id": vehicle["id"],
+
+                "type": vehicle["type"],
+
+                "speed": round(
+                    vehicle["speed"],
+                    1
+                ),
+
+                "max_speed": round(
+                    vehicle["max_speed"],
+                    1
+                ),
+
+                "status":
+                    get_speed_status(
+                        vehicle["speed"]
+                    )
+            })
+
+        history = \
+            vehicle_history[-20:]
 
     return jsonify({
 
-        "camera_active": camera_active,
+        "camera_active":
+            camera_active,
 
-        "vehicles": vehicle_count,
+        "vehicles":
+            current_vehicles,
+
+        "vehicle_count":
+            len(current_vehicles),
 
         "highest_speed":
-            round(current_highest, 1),
+            round(
+                highest_speed,
+                1
+            ),
 
         "total_detected":
-            total_detected
+            total_detected,
+
+        "history":
+            history
     })
 
 
 # ============================================================
-# SERVER
+# RUN SERVER
 # ============================================================
 
 if __name__ == "__main__":
@@ -674,9 +919,9 @@ if __name__ == "__main__":
     local_ip = get_local_ip()
 
     print("\n")
-    print("=" * 55)
-    print("       REAL-TIME VEHICLE SPEED TRACKER")
-    print("=" * 55)
+    print("=" * 60)
+    print("       REAL-TIME VEHICLE SPEED TRACKER V2")
+    print("=" * 60)
 
     print(
         f"\n📱 PHONE CAMERA:"
@@ -689,17 +934,18 @@ if __name__ == "__main__":
     )
 
     print(
-        f"\n🏠 HOME:"
-        f"\nhttp://{local_ip}:5000/"
+        "\nMake sure both devices are"
     )
 
-    print("\nMake sure phone and laptop are")
-    print("connected to the SAME Wi-Fi.")
-    print("=" * 55)
+    print(
+        "connected to the SAME Wi-Fi."
+    )
+
+    print("=" * 60)
     print("\n")
 
     app.run(
-        host="0.0.0.0",
-        port=5000,
+        host=HOST,
+        port=PORT,
         threaded=True
     )
