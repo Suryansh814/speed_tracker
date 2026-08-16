@@ -1,167 +1,527 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera Stream Source</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #000;
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        h1 {
-            color: #ffffff;
-            margin-bottom: 20px;
-        }
-        #videoElement {
-            width: 100%;
-            max-width: 640px;
-            height: auto;
-            border: 1px solid #333;
-            border-radius: 8px;
-        }
-        .info {
-            margin-top: 15px;
-            text-align: center;
-            color: #cccccc;
-            max-width: 80%;
-        }
-        .controls {
-            margin-top: 20px;
-        }
-        button {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            padding: 15px 32px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-        button.stop {
-            background-color: #f44336;
-        }
-    </style>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.0,
+               maximum-scale=1.0,
+               user-scalable=no">
+
+<title>Phone Camera | Speed Tracker</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+
+    margin: 0;
+
+    background: #050505;
+
+    color: white;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    min-height: 100vh;
+
+    display: flex;
+
+    justify-content: center;
+}
+
+.container {
+
+    width: 100%;
+
+    max-width: 600px;
+
+    padding: 20px;
+
+    text-align: center;
+}
+
+.header {
+
+    margin-bottom: 20px;
+}
+
+.header h1 {
+
+    margin: 0;
+
+    font-size: 24px;
+}
+
+.header p {
+
+    color: #999;
+
+    font-size: 14px;
+}
+
+.camera-box {
+
+    position: relative;
+
+    width: 100%;
+
+    background: #111;
+
+    border-radius: 15px;
+
+    overflow: hidden;
+
+    border: 1px solid #292929;
+}
+
+video {
+
+    width: 100%;
+
+    display: block;
+
+    background: black;
+}
+
+.status {
+
+    margin-top: 15px;
+
+    padding: 12px;
+
+    border-radius: 10px;
+
+    background: #181818;
+
+    font-size: 14px;
+}
+
+.status.connected {
+
+    color: #00ff88;
+}
+
+.status.disconnected {
+
+    color: #ff5555;
+}
+
+.controls {
+
+    display: flex;
+
+    gap: 10px;
+
+    margin-top: 15px;
+}
+
+button {
+
+    flex: 1;
+
+    padding: 15px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    font-size: 16px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+.start {
+
+    background: #00c853;
+
+    color: white;
+}
+
+.stop {
+
+    background: #d50000;
+
+    color: white;
+}
+
+button:disabled {
+
+    opacity: 0.4;
+
+}
+
+.info {
+
+    margin-top: 20px;
+
+    padding: 15px;
+
+    background: #101010;
+
+    border-radius: 10px;
+
+    color: #aaa;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+}
+
+</style>
+
 </head>
+
+
 <body>
-    <h1>Camera Feed</h1>
-    <video id="videoElement" autoplay playsinline></video>
-    
-    <div class="controls">
-        <button id="startButton">Start Streaming</button>
-        <button id="stopButton" class="stop">Stop Streaming</button>
+
+<div class="container">
+
+    <div class="header">
+
+        <h1>📱 Phone Camera</h1>
+
+        <p>Speed Tracker Camera Source</p>
+
     </div>
-    
-    <p class="info">This feed is being sent to the server for processing. Make sure your phone and laptop are on the same network.</p>
 
-   <!-- ... previous HTML code continues ... -->
 
-    <script>
-        const video = document.getElementById('videoElement');
-        const startButton = document.getElementById('startButton');
-        const stopButton = document.getElementById('stopButton');
-        let stream = null;
-        let intervalId = null;
-        
-        // Function to capture and send frame
-        function captureAndSendFrame() {
-            if (!stream) return;
-            
-            // Create a canvas to capture the current frame
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            // Convert canvas to blob
-            canvas.toBlob(blob => {
-                if (blob) {
-                    const formData = new FormData();
-                    formData.append('image', blob);
-                    
-                    // Send frame to server
-                    fetch('/upload_frame', {
-                        method: 'POST',
+    <div class="camera-box">
+
+        <video
+            id="video"
+            autoplay
+            playsinline>
+        </video>
+
+    </div>
+
+
+    <div
+        id="status"
+        class="status disconnected">
+
+        🔴 Camera not started
+
+    </div>
+
+
+    <div class="controls">
+
+        <button
+            id="start"
+            class="start">
+
+            Start Camera
+
+        </button>
+
+
+        <button
+            id="stop"
+            class="stop"
+            disabled>
+
+            Stop
+
+        </button>
+
+    </div>
+
+
+    <div class="info">
+
+        <b>How to use:</b>
+
+        <br><br>
+
+        1. Press <b>Start Camera</b>
+
+        <br>
+
+        2. Allow camera permission
+
+        <br>
+
+        3. Keep the phone facing the road
+
+        <br>
+
+        4. Keep this page open
+
+        <br>
+
+        5. Open the Monitor page on your laptop
+
+    </div>
+
+</div>
+
+
+<script>
+
+const video =
+    document.getElementById("video");
+
+const startButton =
+    document.getElementById("start");
+
+const stopButton =
+    document.getElementById("stop");
+
+const status =
+    document.getElementById("status");
+
+let stream = null;
+
+let captureInterval = null;
+
+let sending = false;
+
+
+// ======================================================
+// START CAMERA
+// ======================================================
+
+async function startCamera() {
+
+    try {
+
+        stream =
+            await navigator.mediaDevices
+            .getUserMedia({
+
+                video: {
+
+                    facingMode: {
+                        ideal: "environment"
+                    },
+
+                    width: {
+                        ideal: 640
+                    },
+
+                    height: {
+                        ideal: 480
+                    }
+                },
+
+                audio: false
+            });
+
+
+        video.srcObject = stream;
+
+
+        status.innerHTML =
+            "🟢 Camera connected & sending";
+
+        status.className =
+            "status connected";
+
+
+        startButton.disabled = true;
+
+        stopButton.disabled = false;
+
+
+        captureInterval =
+            setInterval(
+                captureFrame,
+                120
+            );
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+        status.innerHTML =
+            "🔴 Camera permission denied";
+
+        status.className =
+            "status disconnected";
+
+        alert(
+            "Camera access is required."
+        );
+    }
+}
+
+
+// ======================================================
+// CAPTURE FRAME
+// ======================================================
+
+function captureFrame() {
+
+    if (!stream ||
+        video.videoWidth === 0 ||
+        sending) {
+
+        return;
+    }
+
+
+    sending = true;
+
+
+    const canvas =
+        document.createElement("canvas");
+
+
+    canvas.width =
+        video.videoWidth;
+
+    canvas.height =
+        video.videoHeight;
+
+
+    const ctx =
+        canvas.getContext("2d");
+
+
+    ctx.drawImage(
+        video,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    canvas.toBlob(
+
+        async function(blob) {
+
+            if (!blob) {
+
+                sending = false;
+
+                return;
+            }
+
+
+            const formData =
+                new FormData();
+
+
+            formData.append(
+                "image",
+                blob,
+                "frame.jpg"
+            );
+
+
+            try {
+
+                await fetch(
+                    "/upload_frame",
+                    {
+
+                        method: "POST",
+
                         body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status !== 'success') {
-                            console.error('Error uploading frame:', data);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error uploading frame:', error);
-                    });
-                }
-            }, 'image/jpeg', 0.8); // 80% quality
-        }
-        
-        // Function to start streaming
-        function startStreaming() {
-            if (navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: "environment", // Use rear camera
-                        width: { ideal: 640 },
-                        height: { ideal: 480 }
-                    } 
-                })
-                .then(function(s) {
-                    stream = s;
-                    video.srcObject = stream;
-                    
-                    // Start capturing frames every 100ms
-                    intervalId = setInterval(captureAndSendFrame, 100);
-                    
-                    startButton.disabled = true;
-                    stopButton.disabled = false;
-                })
-                .catch(function(error) {
-                    console.log("Something went wrong!", error);
-                    alert("Camera access denied or not available.");
-                });
-            } else {
-                alert("Your browser does not support camera access.");
+                    }
+                );
+
             }
-        }
-        
-        // Function to stop streaming
-        function stopStreaming() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                stream = null;
+
+            catch(error) {
+
+                console.error(
+                    "Upload error:",
+                    error
+                );
+
+                status.innerHTML =
+                    "🟠 Connection problem";
             }
-            
-            if (intervalId) {
-                clearInterval(intervalId);
-                intervalId = null;
-            }
-            
-            video.srcObject = null;
-            startButton.disabled = false;
-            stopButton.disabled = true;
-        }
-        
-        // Event listeners
-        startButton.addEventListener('click', startStreaming);
-        stopButton.addEventListener('click', stopStreaming);
-        
-        // Initial state
-        stopButton.disabled = true;
-    </script>
+
+
+            sending = false;
+
+        },
+
+        "image/jpeg",
+
+        0.65
+    );
+}
+
+
+// ======================================================
+// STOP CAMERA
+// ======================================================
+
+function stopCamera() {
+
+    if (captureInterval) {
+
+        clearInterval(
+            captureInterval
+        );
+
+        captureInterval = null;
+    }
+
+
+    if (stream) {
+
+        stream
+            .getTracks()
+            .forEach(
+                track =>
+                    track.stop()
+            );
+
+        stream = null;
+    }
+
+
+    video.srcObject = null;
+
+
+    startButton.disabled = false;
+
+    stopButton.disabled = true;
+
+
+    status.innerHTML =
+        "🔴 Camera stopped";
+
+    status.className =
+        "status disconnected";
+}
+
+
+startButton
+    .addEventListener(
+        "click",
+        startCamera
+    );
+
+
+stopButton
+    .addEventListener(
+        "click",
+        stopCamera
+    );
+
+</script>
+
 </body>
+
 </html>
