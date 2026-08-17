@@ -1,928 +1,565 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>SpeedTracker V2</title>
-
-
-    <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-
-        body {
-
-            margin: 0;
-
-            background:
-                #080808;
-
-            color: white;
-
-            font-family:
-                Arial,
-                sans-serif;
-
-        }
-
-
-        .header {
-
-            display: flex;
-
-            justify-content:
-                space-between;
-
-            align-items: center;
-
-            padding:
-                16px 24px;
-
-            border-bottom:
-                1px solid #222;
-
-            background:
-                #0b0b0b;
-
-        }
-
-
-        .header h1 {
-
-            margin: 0;
-
-            font-size: 22px;
-
-        }
-
-
-        #cameraStatus {
-
-            font-size: 13px;
-
-            color: #00ff55;
-
-        }
-
-
-        .container {
-
-            width: 95%;
-
-            max-width: 1300px;
-
-            margin:
-                18px auto;
-
-        }
-
-
-        .card {
-
-            background:
-                #111;
-
-            border:
-                1px solid #242424;
-
-            border-radius:
-                10px;
-
-            padding:
-                14px;
-
-        }
-
-
-        .title {
-
-            display: flex;
-
-            justify-content:
-                space-between;
-
-            align-items: center;
-
-            margin-bottom:
-                12px;
-
-        }
-
-
-        .live {
-
-            color:
-                #00ff55;
-
-            font-size:
-                13px;
-
-        }
-
-
-        #videoStream {
-
-            display:
-                block;
-
-            width:
-                100%;
-
-            aspect-ratio:
-                16 / 9;
-
-            object-fit:
-                contain;
-
-            background:
-                #000;
-
-            border-radius:
-                7px;
-
-        }
-
-
-        .stats {
-
-            display:
-                grid;
-
-            grid-template-columns:
-                repeat(4, 1fr);
-
-            gap:
-                12px;
-
-            margin-top:
-                14px;
-
-        }
-
-
-        .stat {
-
-            background:
-                #111;
-
-            border:
-                1px solid #242424;
-
-            border-radius:
-                10px;
-
-            padding:
-                18px;
-
-        }
-
-
-        .stat-title {
-
-            color:
-                #777;
-
-            font-size:
-                11px;
-
-            text-transform:
-                uppercase;
-
-        }
-
-
-        .stat-value {
-
-            font-size:
-                24px;
-
-            margin-top:
-                8px;
-
-            color:
-                #00ff88;
-
-            font-weight:
-                bold;
-
-        }
-
-
-        .section {
-
-            margin-top:
-                15px;
-
-        }
-
-
-        .section-title {
-
-            padding:
-                13px 15px;
-
-            background:
-                #111;
-
-            border:
-                1px solid #242424;
-
-            border-radius:
-                9px 9px 0 0;
-
-            font-weight:
-                bold;
-
-        }
-
-
-        table {
-
-            width:
-                100%;
-
-            border-collapse:
-                collapse;
-
-            background:
-                #0f0f0f;
-
-        }
-
-
-        th,
-        td {
-
-            padding:
-                11px;
-
-            text-align:
-                left;
-
-            border-bottom:
-                1px solid #222;
-
-            font-size:
-                13px;
-
-        }
-
-
-        th {
-
-            color:
-                #777;
-
-            font-size:
-                11px;
-
-            text-transform:
-                uppercase;
-
-        }
-
-
-        .speed-normal {
-
-            color:
-                #00ff55;
-
-            font-weight:
-                bold;
-
-        }
-
-
-        .speed-moderate {
-
-            color:
-                #ffff00;
-
-            font-weight:
-                bold;
-
-        }
-
-
-        .speed-high {
-
-            color:
-                #ff3333;
-
-            font-weight:
-                bold;
-
-        }
-
-
-        .parked {
-
-            color:
-                #999;
-
-            font-weight:
-                bold;
-
-        }
-
-
-        .empty {
-
-            text-align:
-                center;
-
-            color:
-                #666;
-
-            padding:
-                25px;
-
-        }
-
-
-        .calibration-info {
-
-            margin-top:
-                12px;
-
-            color:
-                #777;
-
-            font-size:
-                12px;
-
-        }
-
-
-        @media(max-width: 900px) {
-
-            .stats {
-
-                grid-template-columns:
-                    repeat(2, 1fr);
-
-            }
-
-        }
-
-
-        @media(max-width: 600px) {
-
-            .stats {
-
-                grid-template-columns:
-                    1fr;
-
-            }
-
-        }
-
-    </style>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpeedTracker V3</title>
+<style>
+*{box-sizing:border-box}
+body{
+    margin:0;
+    background:#080808;
+    color:#fff;
+    font-family:Arial,sans-serif;
+}
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px 22px;
+    border-bottom:1px solid #222;
+    background:#0b0b0b;
+}
+.header h1{margin:0;font-size:22px}
+#cameraStatus{font-size:13px;color:#ff5555}
+.container{
+    width:96%;
+    max-width:1450px;
+    margin:16px auto;
+}
+.grid{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 330px;
+    gap:14px;
+}
+.card{
+    background:#111;
+    border:1px solid #242424;
+    border-radius:10px;
+    padding:12px;
+}
+.title{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+}
+.live{color:#00ff55;font-size:13px}
+.videoWrap{
+    position:relative;
+    width:100%;
+    aspect-ratio:16/9;
+    background:#000;
+    overflow:hidden;
+    border-radius:8px;
+}
+#videoStream{
+    display:block;
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    background:#000;
+}
+#lineCanvas{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    cursor:crosshair;
+    pointer-events:none;
+}
+#lineCanvas.enabled{pointer-events:auto}
+.toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:7px;
+    margin-top:10px;
+}
+button,input{
+    border:1px solid #333;
+    border-radius:7px;
+    background:#191919;
+    color:#fff;
+    padding:9px 11px;
+}
+button{cursor:pointer;font-weight:bold}
+button:hover{background:#242424}
+button.active{
+    background:#006d2c;
+    border-color:#00a83b;
+}
+button.danger{
+    background:#671b1b;
+}
+label{
+    font-size:12px;
+    color:#aaa;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+input[type=number]{width:90px}
+.help{
+    color:#999;
+    font-size:12px;
+    line-height:1.45;
+    margin:10px 0 0;
+}
+.stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:9px;
+    margin-top:12px;
+}
+.stat{
+    background:#0d0d0d;
+    border:1px solid #242424;
+    border-radius:9px;
+    padding:12px;
+}
+.stat-title{
+    color:#777;
+    font-size:10px;
+    text-transform:uppercase;
+}
+.stat-value{
+    margin-top:6px;
+    font-size:21px;
+    color:#00ff88;
+    font-weight:bold;
+}
+.panelTitle{
+    font-size:15px;
+    font-weight:bold;
+    margin-bottom:9px;
+}
+.vehicleList{
+    max-height:420px;
+    overflow:auto;
+}
+.vehicle{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    padding:10px 0;
+    border-bottom:1px solid #222;
+}
+.vehicle small{color:#888}
+.vehicle strong{color:#00ff88}
+.badge{
+    display:inline-block;
+    padding:3px 6px;
+    border-radius:5px;
+    background:#222;
+    font-size:10px;
+    color:#bbb;
+}
+.history{
+    max-height:250px;
+    overflow:auto;
+}
+.historyRow{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:6px;
+    padding:7px 0;
+    border-bottom:1px solid #222;
+    font-size:12px;
+}
+.mono{font-family:monospace}
+.note{
+    margin-top:12px;
+    padding:10px;
+    border:1px solid #2d2d2d;
+    border-radius:8px;
+    background:#0d0d0d;
+    color:#aaa;
+    font-size:12px;
+    line-height:1.5;
+}
+@media(max-width:1000px){
+    .grid{grid-template-columns:1fr}
+}
+</style>
 </head>
-
-
 <body>
 
-
 <div class="header">
-
-
-    <h1>
-        🚗 SpeedTracker V2
-    </h1>
-
-
-    <div id="cameraStatus">
-        ● Connecting...
-    </div>
-
-
+    <h1>🚗 SpeedTracker V3</h1>
+    <div id="cameraStatus">● Camera Offline</div>
 </div>
-
 
 <div class="container">
+<div class="grid">
 
-
-    <!-- =====================================================
-         VIDEO
-    ====================================================== -->
-
-
-    <div class="card">
-
-
-        <div class="title">
-
-
-            <strong>
-                Live Road Monitoring
-            </strong>
-
-
-            <span class="live">
-                ● LIVE
-            </span>
-
-
-        </div>
-
-
-        <!--
-            IMPORTANT:
-
-            Direct MJPEG stream.
-
-            No fetch().
-            No setInterval() for video.
-        -->
-
-
-        <img
-            id="videoStream"
-            src="/video_feed"
-            alt="Live Vehicle Feed"
-        >
-
-
-        <div class="calibration-info">
-
-            📏 Calibration lines:
-            A → B =
-            <span id="calibrationDistance">
-                10
-            </span>
-            meters
-
-            &nbsp; | &nbsp;
-
-            Keep actual road distance between
-            A and B equal to this value.
-
-        </div>
-
-
+<div>
+<div class="card">
+    <div class="title">
+        <strong>Live Road Monitoring</strong>
+        <span class="live">● LIVE</span>
     </div>
 
+    <div class="videoWrap">
+        <img id="videoStream" src="/video_feed" alt="Live stream">
+        <canvas id="lineCanvas" width="640" height="360"></canvas>
+    </div>
 
-    <!-- =====================================================
-         STATS
-    ====================================================== -->
+    <div class="toolbar">
+        <button id="setA">Set A — 2 clicks</button>
+        <button id="setB">Set B — 2 clicks</button>
+        <button id="parallelB">B Parallel — 1 click</button>
+        <button id="apply">Apply Lines</button>
+        <button id="resetLines">Reset Default</button>
+        <button id="resetTracking" class="danger">Reset Tracking</button>
+        <label>
+            A-B distance:
+            <input id="distance" type="number" min="0.1" max="1000" step="0.1" value="10">
+            m
+        </label>
+    </div>
 
+    <p class="help" id="lineHelp">
+        Set A: click the two ends of the first road-crossing line.
+        Then Set B: click the two ends of the second line.
+        Use "B Parallel" if you want B to automatically follow A's angle.
+    </p>
 
     <div class="stats">
-
-
         <div class="stat">
-
-            <div class="stat-title">
-                Vehicles In Frame
-            </div>
-
-            <div
-                class="stat-value"
-                id="vehicleCount"
-            >
-                0
-            </div>
-
+            <div class="stat-title">Vehicles in frame</div>
+            <div class="stat-value" id="vehicleCount">0</div>
         </div>
-
-
         <div class="stat">
-
-            <div class="stat-title">
-                Highest Speed
-            </div>
-
-            <div
-                class="stat-value"
-                id="highestSpeed"
-            >
-                0 km/h
-            </div>
-
+            <div class="stat-title">Average measured speed</div>
+            <div class="stat-value" id="averageSpeed">0 km/h</div>
         </div>
-
-
         <div class="stat">
-
-            <div class="stat-title">
-                Average Speed
-            </div>
-
-            <div
-                class="stat-value"
-                id="averageSpeed"
-            >
-                0 km/h
-            </div>
-
+            <div class="stat-title">Highest speed</div>
+            <div class="stat-value" id="highestSpeed">0 km/h</div>
         </div>
-
-
-        <div class="stat">
-
-            <div class="stat-title">
-                Total Detected
-            </div>
-
-            <div
-                class="stat-value"
-                id="totalDetected"
-            >
-                0
-            </div>
-
-        </div>
-
-
     </div>
-
-
-    <!-- =====================================================
-         LIVE VEHICLES
-    ====================================================== -->
-
-
-    <div class="section">
-
-
-        <div class="section-title">
-
-            🚘 Live Vehicles
-
-        </div>
-
-
-        <table>
-
-
-            <thead>
-
-                <tr>
-
-                    <th>
-                        ID
-                    </th>
-
-                    <th>
-                        Vehicle
-                    </th>
-
-                    <th>
-                        Speed
-                    </th>
-
-                    <th>
-                        Max Speed
-                    </th>
-
-                    <th>
-                        Status
-                    </th>
-
-                </tr>
-
-            </thead>
-
-
-            <tbody id="vehicleTable">
-
-                <tr>
-
-                    <td
-                        colspan="5"
-                        class="empty"
-                    >
-                        Waiting for vehicles...
-
-                    </td>
-
-                </tr>
-
-            </tbody>
-
-
-        </table>
-
-
-    </div>
-
-
+</div>
 </div>
 
+<div>
+<div class="card">
+    <div class="panelTitle">Live Vehicles</div>
+    <div class="vehicleList" id="vehicles">
+        <div style="color:#777">Waiting for vehicles...</div>
+    </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+    <div class="panelTitle">Measured History</div>
+    <div class="history" id="history">
+        <div style="color:#777">No measured vehicle yet.</div>
+    </div>
+</div>
+
+<div class="note">
+    <b>Important:</b> speed is calculated from the real-world distance
+    between A and B and the time taken by the same tracked vehicle to
+    cross them. So enter the actual road distance, not the pixel distance.
+</div>
+</div>
+
+</div>
+</div>
 
 <script>
+const canvas = document.getElementById("lineCanvas");
+const ctx = canvas.getContext("2d");
 
+const setAButton = document.getElementById("setA");
+const setBButton = document.getElementById("setB");
+const parallelBButton = document.getElementById("parallelB");
+const applyButton = document.getElementById("apply");
+const resetLinesButton = document.getElementById("resetLines");
+const resetTrackingButton = document.getElementById("resetTracking");
 
-/* =========================================================
-   SPEED CLASS
-   ========================================================= */
+const distanceInput = document.getElementById("distance");
+const help = document.getElementById("lineHelp");
 
-function getSpeedClass(
-    speed,
-    status
-) {
+let lineA = [[40,150],[600,150]];
+let lineB = [[40,245],[600,245]];
 
+let mode = null;
+let clicks = [];
 
-    if (status === "PARKED") {
-
-        return "parked";
-
-    }
-
-
-    if (speed < 40) {
-
-        return "speed-normal";
-
-    }
-
-
-    if (speed < 60) {
-
-        return "speed-moderate";
-
-    }
-
-
-    return "speed-high";
-
+function clamp(v,min,max){
+    return Math.max(min,Math.min(max,v));
 }
 
-
-/* =========================================================
-   UPDATE DASHBOARD
-   ========================================================= */
-
-function updateDashboard() {
-
-
-    fetch(
-        "/status",
-        {
-            cache:
-                "no-store"
-        }
-    )
-
-
-    .then(
-        response =>
-            response.json()
-    )
-
-
-    .then(
-        data => {
-
-
-            /* ---------------------------------------------
-               CAMERA
-            --------------------------------------------- */
-
-
-            const cameraStatus =
-                document.getElementById(
-                    "cameraStatus"
-                );
-
-
-            if (
-                data.camera_active
-            ) {
-
-
-                cameraStatus.textContent =
-                    "● Camera Connected";
-
-
-                cameraStatus.style.color =
-                    "#00ff55";
-
-
-            }
-
-            else {
-
-
-                cameraStatus.textContent =
-                    "● Camera Disconnected";
-
-
-                cameraStatus.style.color =
-                    "#ff3333";
-
-            }
-
-
-            /* ---------------------------------------------
-               STATS
-            --------------------------------------------- */
-
-
-            document.getElementById(
-                "vehicleCount"
-            ).textContent =
-                data.vehicle_count;
-
-
-            document.getElementById(
-                "highestSpeed"
-            ).textContent =
-
-                Math.round(
-                    data.highest_speed
-                )
-
-                +
-
-                " km/h";
-
-
-            document.getElementById(
-                "averageSpeed"
-            ).textContent =
-
-                Math.round(
-                    data.average_speed
-                )
-
-                +
-
-                " km/h";
-
-
-            document.getElementById(
-                "totalDetected"
-            ).textContent =
-                data.total_detected;
-
-
-            document.getElementById(
-                "calibrationDistance"
-            ).textContent =
-                data.calibration_distance;
-
-
-            /* ---------------------------------------------
-               VEHICLE TABLE
-            --------------------------------------------- */
-
-
-            const table =
-                document.getElementById(
-                    "vehicleTable"
-                );
-
-
-            if (
-                !data.vehicles
-                ||
-                data.vehicles.length === 0
-            ) {
-
-
-                table.innerHTML = `
-
-                    <tr>
-
-                        <td
-                            colspan="5"
-                            class="empty"
-                        >
-                            No vehicle detected
-
-                        </td>
-
-                    </tr>
-
-                `;
-
-
-                return;
-
-            }
-
-
-            table.innerHTML = "";
-
-
-            data.vehicles.forEach(
-                vehicle => {
-
-
-                    const row =
-                        document.createElement(
-                            "tr"
-                        );
-
-
-                    const speedClass =
-                        getSpeedClass(
-
-                            vehicle.speed,
-
-                            vehicle.status
-
-                        );
-
-
-                    row.innerHTML = `
-
-                        <td>
-                            #${vehicle.id}
-                        </td>
-
-                        <td>
-                            ${vehicle.type}
-                        </td>
-
-                        <td
-                            class="${speedClass}"
-                        >
-                            ${Math.round(
-                                vehicle.speed
-                            )} km/h
-                        </td>
-
-                        <td>
-                            ${Math.round(
-                                vehicle.max_speed
-                            )} km/h
-                        </td>
-
-                        <td
-                            class="${speedClass}"
-                        >
-                            ${vehicle.status}
-                        </td>
-
-                    `;
-
-
-                    table.appendChild(
-                        row
-                    );
-
-
-                }
-            );
-
-
-        }
-    )
-
-
-    .catch(
-        error => {
-
-            console.log(
-                "Status error:",
-                error
-            );
-
-        }
+function drawLine(line, color, label){
+    if(!line || line.length !== 2) return;
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(line[0][0],line[0][1]);
+    ctx.lineTo(line[1][0],line[1][1]);
+    ctx.stroke();
+
+    for(const p of line){
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(p[0],p[1],6,0,Math.PI*2);
+        ctx.fill();
+    }
+
+    ctx.fillStyle = color;
+    ctx.font = "bold 16px Arial";
+    ctx.fillText(
+        label,
+        line[0][0] + 8,
+        Math.max(18,line[0][1] - 8)
     );
-
 }
 
+function redraw(){
+    ctx.clearRect(0,0,640,360);
 
-/* =========================================================
-   STATUS ONLY
-   =========================================================
+    drawLine(lineA,"#ffb400","A");
+    drawLine(lineB,"#ff00aa","B");
 
-   Video stream is NOT touched here.
+    if(clicks.length){
+        ctx.fillStyle = "#fff";
+        for(const p of clicks){
+            ctx.beginPath();
+            ctx.arc(p[0],p[1],5,0,Math.PI*2);
+            ctx.fill();
+        }
+    }
+}
 
-   This is important for smooth video.
-*/
+function setMode(newMode){
+    mode = newMode;
+    clicks = [];
 
-setInterval(
+    setAButton.classList.toggle("active",newMode==="A");
+    setBButton.classList.toggle("active",newMode==="B");
+    parallelBButton.classList.toggle("active",newMode==="PB");
 
-    updateDashboard,
+    canvas.classList.toggle("enabled",!!newMode);
 
-    500
+    if(newMode==="A"){
+        help.textContent =
+            "A selected: click the LEFT/RIGHT ends of the first road-crossing line.";
+    }else if(newMode==="B"){
+        help.textContent =
+            "B selected: click the two ends of the second road-crossing line.";
+    }else if(newMode==="PB"){
+        help.textContent =
+            "B Parallel selected: click ONE point where B should sit. B will automatically get A's angle.";
+    }else{
+        help.textContent =
+            "Choose Set A, Set B, or B Parallel.";
+    }
+}
 
-);
+function canvasPoint(event){
+    const rect = canvas.getBoundingClientRect();
 
+    return [
+        clamp(
+            Math.round((event.clientX-rect.left)*640/rect.width),
+            0,639
+        ),
+        clamp(
+            Math.round((event.clientY-rect.top)*360/rect.height),
+            0,359
+        )
+    ];
+}
 
-updateDashboard();
+canvas.addEventListener("click",event=>{
+    if(!mode) return;
 
+    const p = canvasPoint(event);
 
+    if(mode==="A"){
+        clicks.push(p);
+
+        if(clicks.length===2){
+            lineA = [clicks[0],clicks[1]];
+            setMode(null);
+        }
+    }
+
+    else if(mode==="B"){
+        clicks.push(p);
+
+        if(clicks.length===2){
+            lineB = [clicks[0],clicks[1]];
+            setMode(null);
+        }
+    }
+
+    else if(mode==="PB"){
+        // One point defines where the parallel line should pass.
+        const a1 = lineA[0];
+        const a2 = lineA[1];
+
+        const dx = a2[0]-a1[0];
+        const dy = a2[1]-a1[1];
+
+        const length = Math.hypot(dx,dy) || 1;
+
+        // Keep the same length as A.
+        const ux = dx/length;
+        const uy = dy/length;
+
+        const half = length/2;
+
+        lineB = [
+            [
+                Math.round(p[0]-ux*half),
+                Math.round(p[1]-uy*half)
+            ],
+            [
+                Math.round(p[0]+ux*half),
+                Math.round(p[1]+uy*half)
+            ]
+        ].map(q=>[
+            clamp(q[0],0,639),
+            clamp(q[1],0,359)
+        ]);
+
+        setMode(null);
+    }
+
+    redraw();
+});
+
+setAButton.onclick = ()=>setMode("A");
+setBButton.onclick = ()=>setMode("B");
+parallelBButton.onclick = ()=>setMode("PB");
+
+applyButton.onclick = async ()=>{
+    try{
+        const distance = parseFloat(distanceInput.value);
+
+        const response = await fetch("/set_lines",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+                line_a:lineA,
+                line_b:lineB,
+                distance:distance
+            })
+        });
+
+        const data = await response.json();
+
+        if(data.status==="success"){
+            alert("✅ Lines + A-B distance applied.");
+        }else{
+            alert("❌ "+(data.message || "Could not apply"));
+        }
+    }catch(e){
+        alert("❌ Connection error");
+    }
+};
+
+resetLinesButton.onclick = ()=>{
+    lineA = [[40,150],[600,150]];
+    lineB = [[40,245],[600,245]];
+    redraw();
+};
+
+resetTrackingButton.onclick = async ()=>{
+    await fetch("/reset_tracking",{method:"POST"});
+};
+
+async function updateStatus(){
+    try{
+        const response = await fetch(
+            "/status?ts="+Date.now(),
+            {cache:"no-store"}
+        );
+
+        const data = await response.json();
+
+        document.getElementById("cameraStatus").textContent =
+            data.camera_active
+            ? "● Camera Connected"
+            : "● Camera Offline";
+
+        document.getElementById("cameraStatus").style.color =
+            data.camera_active
+            ? "#00ff55"
+            : "#ff5555";
+
+        document.getElementById("vehicleCount").textContent =
+            data.vehicle_count;
+
+        document.getElementById("averageSpeed").textContent =
+            data.average_speed + " km/h";
+
+        document.getElementById("highestSpeed").textContent =
+            data.highest_speed + " km/h";
+
+        if(data.lines){
+            lineA = data.lines.a;
+            lineB = data.lines.b;
+            distanceInput.value = data.calibration_distance;
+            redraw();
+        }
+
+        const vehicleBox = document.getElementById("vehicles");
+
+        if(!data.vehicles.length){
+            vehicleBox.innerHTML =
+                '<div style="color:#777">Waiting for vehicles...</div>';
+        }else{
+            vehicleBox.innerHTML =
+                data.vehicles.map(v=>{
+                    const speed = v.measured
+                        ? v.speed+" km/h"
+                        : "0 km/h";
+
+                    return `
+                    <div class="vehicle">
+                        <div>
+                            <b>#${v.id} ${v.type}</b><br>
+                            <small>Confidence ${Math.round(v.confidence*100)}%</small>
+                        </div>
+                        <div style="text-align:right">
+                            <strong>${speed}</strong><br>
+                            <span class="badge">${v.status}</span>
+                        </div>
+                    </div>`;
+                }).join("");
+        }
+
+        const historyBox = document.getElementById("history");
+
+        if(!data.history.length){
+            historyBox.innerHTML =
+                '<div style="color:#777">No measured vehicle yet.</div>';
+        }else{
+            historyBox.innerHTML =
+                data.history.slice().reverse().map(h=>`
+                    <div class="historyRow">
+                        <span>#${h.id} ${h.type}</span>
+                        <b>${h.speed} km/h</b>
+                        <span>${h.time}</span>
+                    </div>
+                `).join("");
+        }
+
+    }catch(e){
+        document.getElementById("cameraStatus").textContent =
+            "● Server connection problem";
+        document.getElementById("cameraStatus").style.color =
+            "#ff5555";
+    }
+}
+
+redraw();
+updateStatus();
+setInterval(updateStatus,800);
 </script>
 
-
 </body>
-
 </html>
