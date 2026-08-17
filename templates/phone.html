@@ -3,402 +3,309 @@
 
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta name="viewport"
-      content="width=device-width,
-               initial-scale=1.0,
-               maximum-scale=1.0,
-               user-scalable=no">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<title>Phone Camera | Speed Tracker</title>
+    <title>SpeedTracker Camera</title>
 
-<style>
+    <style>
 
-* {
-    box-sizing: border-box;
-}
+        * {
+            box-sizing: border-box;
+        }
 
-body {
+        html,
+        body {
 
-    margin: 0;
+            margin: 0;
+            padding: 0;
 
-    background: #050505;
+            width: 100%;
+            height: 100%;
 
-    color: white;
+            background: #000;
 
-    font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
+            color: white;
 
-    min-height: 100vh;
+            font-family: Arial, sans-serif;
 
-    display: flex;
+            overflow: hidden;
 
-    justify-content: center;
-}
+        }
 
-.container {
 
-    width: 100%;
+        #camera {
 
-    max-width: 600px;
+            position: fixed;
 
-    padding: 20px;
+            top: 0;
+            left: 0;
 
-    text-align: center;
-}
+            width: 100vw;
+            height: 100vh;
 
-.header {
+            object-fit: cover;
 
-    margin-bottom: 20px;
-}
+            background: #000;
 
-.header h1 {
+        }
 
-    margin: 0;
 
-    font-size: 24px;
-}
+        .controls {
 
-.header p {
+            position: fixed;
 
-    color: #999;
+            bottom: 20px;
 
-    font-size: 14px;
-}
+            left: 50%;
 
-.camera-box {
+            transform:
+                translateX(-50%);
 
-    position: relative;
+            display: flex;
 
-    width: 100%;
+            gap: 10px;
 
-    background: #111;
+            z-index: 10;
 
-    border-radius: 15px;
+        }
 
-    overflow: hidden;
 
-    border: 1px solid #292929;
-}
+        button {
 
-video {
+            border: none;
 
-    width: 100%;
+            border-radius: 8px;
 
-    display: block;
+            padding:
+                12px 20px;
 
-    background: black;
-}
+            font-size: 15px;
 
-.status {
+            font-weight: bold;
 
-    margin-top: 15px;
+            color: white;
 
-    padding: 12px;
+            background: #00a83b;
 
-    border-radius: 10px;
+        }
 
-    background: #181818;
 
-    font-size: 14px;
-}
+        button.stop {
 
-.status.connected {
+            background: #d62828;
 
-    color: #00ff88;
-}
+        }
 
-.status.disconnected {
 
-    color: #ff5555;
-}
+        button:disabled {
 
-.controls {
+            opacity: 0.4;
 
-    display: flex;
+        }
 
-    gap: 10px;
 
-    margin-top: 15px;
-}
+        #status {
 
-button {
+            position: fixed;
 
-    flex: 1;
+            top: 15px;
 
-    padding: 15px;
+            left: 50%;
 
-    border: none;
+            transform:
+                translateX(-50%);
 
-    border-radius: 10px;
+            z-index: 10;
 
-    font-size: 16px;
+            padding:
+                8px 14px;
 
-    font-weight: bold;
+            border-radius: 20px;
 
-    cursor: pointer;
-}
+            background:
+                rgba(0,0,0,0.65);
 
-.start {
+            font-size: 13px;
 
-    background: #00c853;
+        }
 
-    color: white;
-}
 
-.stop {
+        .orientation {
 
-    background: #d50000;
+            position: fixed;
 
-    color: white;
-}
+            top: 50px;
 
-button:disabled {
+            left: 50%;
 
-    opacity: 0.4;
+            transform:
+                translateX(-50%);
 
-}
+            z-index: 10;
 
-.info {
+            background:
+                rgba(0,0,0,0.65);
 
-    margin-top: 20px;
+            padding:
+                6px 10px;
 
-    padding: 15px;
+            border-radius: 6px;
 
-    background: #101010;
+            font-size: 12px;
 
-    border-radius: 10px;
+        }
 
-    color: #aaa;
-
-    font-size: 13px;
-
-    line-height: 1.6;
-}
-
-</style>
+    </style>
 
 </head>
 
 
 <body>
 
-<div class="container">
 
-    <div class="header">
-
-        <h1>📱 Phone Camera</h1>
-
-        <p>Speed Tracker Camera Source</p>
-
-    </div>
+<video
+    id="camera"
+    autoplay
+    playsinline
+    muted
+></video>
 
 
-    <div class="camera-box">
-
-        <video
-            id="video"
-            autoplay
-            playsinline>
-        </video>
-
-    </div>
+<div id="status">
+    Camera stopped
+</div>
 
 
-    <div
-        id="status"
-        class="status disconnected">
-
-        🔴 Camera not started
-
-    </div>
+<div class="orientation">
+    📱 Keep phone in LANDSCAPE
+</div>
 
 
-    <div class="controls">
+<div class="controls">
 
-        <button
-            id="start"
-            class="start">
+    <button id="start">
+        Start Camera
+    </button>
 
-            Start Camera
-
-        </button>
-
-
-        <button
-            id="stop"
-            class="stop"
-            disabled>
-
-            Stop
-
-        </button>
-
-    </div>
-
-
-    <div class="info">
-
-        <b>How to use:</b>
-
-        <br><br>
-
-        1. Press <b>Start Camera</b>
-
-        <br>
-
-        2. Allow camera permission
-
-        <br>
-
-        3. Keep the phone facing the road
-
-        <br>
-
-        4. Keep this page open
-
-        <br>
-
-        5. Open the Monitor page on your laptop
-
-    </div>
+    <button
+        id="stop"
+        class="stop"
+        disabled
+    >
+        Stop
+    </button>
 
 </div>
 
 
 <script>
 
+
 const video =
-    document.getElementById("video");
+    document.getElementById(
+        "camera"
+    );
+
 
 const startButton =
-    document.getElementById("start");
+    document.getElementById(
+        "start"
+    );
+
 
 const stopButton =
-    document.getElementById("stop");
+    document.getElementById(
+        "stop"
+    );
+
 
 const status =
-    document.getElementById("status");
+    document.getElementById(
+        "status"
+    );
+
 
 let stream = null;
 
-let captureInterval = null;
+let running = false;
 
 let sending = false;
 
 
-// ======================================================
-// START CAMERA
-// ======================================================
-
-async function startCamera() {
-
-    try {
-
-        stream =
-            await navigator.mediaDevices
-            .getUserMedia({
-
-                video: {
-
-                    facingMode: {
-                        ideal: "environment"
-                    },
-
-                    width: {
-                        ideal: 640
-                    },
-
-                    height: {
-                        ideal: 480
-                    }
-                },
-
-                audio: false
-            });
+const canvas =
+    document.createElement(
+        "canvas"
+    );
 
 
-        video.srcObject = stream;
+/* =========================================================
+   SEND ONE FRAME
+   ========================================================= */
+
+async function sendFrame() {
 
 
-        status.innerHTML =
-            "🟢 Camera connected & sending";
-
-        status.className =
-            "status connected";
-
-
-        startButton.disabled = true;
-
-        stopButton.disabled = false;
-
-
-        captureInterval =
-            setInterval(
-                captureFrame,
-                120
-            );
-
-    }
-
-    catch(error) {
-
-        console.error(error);
-
-        status.innerHTML =
-            "🔴 Camera permission denied";
-
-        status.className =
-            "status disconnected";
-
-        alert(
-            "Camera access is required."
-        );
-    }
-}
-
-
-// ======================================================
-// CAPTURE FRAME
-// ======================================================
-
-function captureFrame() {
-
-    if (!stream ||
-        video.videoWidth === 0 ||
-        sending) {
+    if (!running) {
 
         return;
+
+    }
+
+
+    if (sending) {
+
+        return;
+
+    }
+
+
+    if (
+        video.videoWidth === 0
+        ||
+        video.videoHeight === 0
+    ) {
+
+        return;
+
     }
 
 
     sending = true;
 
 
-    const canvas =
-        document.createElement("canvas");
+    /*
+       16:9 output
+    */
 
-
-    canvas.width =
-        video.videoWidth;
-
-    canvas.height =
-        video.videoHeight;
+    canvas.width = 640;
+    canvas.height = 360;
 
 
     const ctx =
-        canvas.getContext("2d");
+        canvas.getContext(
+            "2d"
+        );
 
+
+    /*
+       Cover the complete 16:9 frame.
+    */
 
     ctx.drawImage(
+
         video,
+
         0,
         0,
-        canvas.width,
-        canvas.height
+
+        640,
+        360
+
     );
 
 
@@ -406,121 +313,263 @@ function captureFrame() {
 
         async function(blob) {
 
+
             if (!blob) {
 
                 sending = false;
 
                 return;
+
             }
-
-
-            const formData =
-                new FormData();
-
-
-            formData.append(
-                "image",
-                blob,
-                "frame.jpg"
-            );
 
 
             try {
 
+
+                const formData =
+                    new FormData();
+
+
+                formData.append(
+
+                    "image",
+
+                    blob,
+
+                    "camera.jpg"
+
+                );
+
+
                 await fetch(
+
                     "/upload_frame",
+
                     {
 
-                        method: "POST",
+                        method:
+                            "POST",
 
-                        body: formData
+                        body:
+                            formData,
+
+                        cache:
+                            "no-store"
+
                     }
+
                 );
+
 
             }
 
             catch(error) {
 
-                console.error(
+                console.log(
                     "Upload error:",
                     error
                 );
 
-                status.innerHTML =
-                    "🟠 Connection problem";
             }
 
 
             sending = false;
+
 
         },
 
         "image/jpeg",
 
         0.65
+
     );
+
 }
 
 
-// ======================================================
-// STOP CAMERA
-// ======================================================
+/* =========================================================
+   CAMERA LOOP
+   ========================================================= */
 
-function stopCamera() {
+function cameraLoop() {
 
-    if (captureInterval) {
 
-        clearInterval(
-            captureInterval
+    if (!running) {
+
+        return;
+
+    }
+
+
+    sendFrame();
+
+
+    setTimeout(
+
+        cameraLoop,
+
+        66
+
+    );
+
+}
+
+
+/* =========================================================
+   START CAMERA
+   ========================================================= */
+
+startButton.onclick =
+    async function() {
+
+
+    try {
+
+
+        /*
+           Rear camera
+           1280x720 = 16:9
+        */
+
+        stream =
+            await navigator
+                .mediaDevices
+                .getUserMedia({
+
+                    video: {
+
+                        facingMode: {
+
+                            ideal:
+                                "environment"
+
+                        },
+
+                        width: {
+
+                            ideal:
+                                1280
+
+                        },
+
+                        height: {
+
+                            ideal:
+                                720
+
+                        }
+
+                    },
+
+                    audio: false
+
+                });
+
+
+        video.srcObject =
+            stream;
+
+
+        running = true;
+
+
+        startButton.disabled =
+            true;
+
+        stopButton.disabled =
+            false;
+
+
+        status.textContent =
+            "🟢 Camera streaming";
+
+
+        status.style.color =
+            "#00ff55";
+
+
+        cameraLoop();
+
+
+    }
+
+    catch(error) {
+
+
+        console.error(
+            error
         );
 
-        captureInterval = null;
+
+        status.textContent =
+            "❌ Camera permission denied";
+
+
+        status.style.color =
+            "#ff4444";
+
+
+        alert(
+            "Camera permission allow karo."
+        );
+
     }
+
+};
+
+
+/* =========================================================
+   STOP
+   ========================================================= */
+
+stopButton.onclick =
+    function() {
+
+
+    running = false;
 
 
     if (stream) {
 
+
         stream
             .getTracks()
             .forEach(
+
                 track =>
                     track.stop()
+
             );
 
+
         stream = null;
+
     }
 
 
-    video.srcObject = null;
+    video.srcObject =
+        null;
 
 
-    startButton.disabled = false;
+    startButton.disabled =
+        false;
 
-    stopButton.disabled = true;
-
-
-    status.innerHTML =
-        "🔴 Camera stopped";
-
-    status.className =
-        "status disconnected";
-}
+    stopButton.disabled =
+        true;
 
 
-startButton
-    .addEventListener(
-        "click",
-        startCamera
-    );
+    status.textContent =
+        "Camera stopped";
 
 
-stopButton
-    .addEventListener(
-        "click",
-        stopCamera
-    );
+    status.style.color =
+        "#fff";
+
+};
+
 
 </script>
+
 
 </body>
 
