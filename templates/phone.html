@@ -1,576 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>SpeedTracker Camera</title>
-
-    <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-        html,
-        body {
-
-            margin: 0;
-            padding: 0;
-
-            width: 100%;
-            height: 100%;
-
-            background: #000;
-
-            color: white;
-
-            font-family: Arial, sans-serif;
-
-            overflow: hidden;
-
-        }
-
-
-        #camera {
-
-            position: fixed;
-
-            top: 0;
-            left: 0;
-
-            width: 100vw;
-            height: 100vh;
-
-            object-fit: cover;
-
-            background: #000;
-
-        }
-
-
-        .controls {
-
-            position: fixed;
-
-            bottom: 20px;
-
-            left: 50%;
-
-            transform:
-                translateX(-50%);
-
-            display: flex;
-
-            gap: 10px;
-
-            z-index: 10;
-
-        }
-
-
-        button {
-
-            border: none;
-
-            border-radius: 8px;
-
-            padding:
-                12px 20px;
-
-            font-size: 15px;
-
-            font-weight: bold;
-
-            color: white;
-
-            background: #00a83b;
-
-        }
-
-
-        button.stop {
-
-            background: #d62828;
-
-        }
-
-
-        button:disabled {
-
-            opacity: 0.4;
-
-        }
-
-
-        #status {
-
-            position: fixed;
-
-            top: 15px;
-
-            left: 50%;
-
-            transform:
-                translateX(-50%);
-
-            z-index: 10;
-
-            padding:
-                8px 14px;
-
-            border-radius: 20px;
-
-            background:
-                rgba(0,0,0,0.65);
-
-            font-size: 13px;
-
-        }
-
-
-        .orientation {
-
-            position: fixed;
-
-            top: 50px;
-
-            left: 50%;
-
-            transform:
-                translateX(-50%);
-
-            z-index: 10;
-
-            background:
-                rgba(0,0,0,0.65);
-
-            padding:
-                6px 10px;
-
-            border-radius: 6px;
-
-            font-size: 12px;
-
-        }
-
-    </style>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpeedTracker Camera</title>
+<style>
+*{box-sizing:border-box}
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+    color:#fff;
+    font-family:Arial,sans-serif;
+}
+#camera{
+    position:fixed;
+    inset:0;
+    width:100vw;
+    height:100vh;
+    object-fit:contain;
+    background:#000;
+}
+.top{
+    position:fixed;
+    top:15px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:5;
+    padding:8px 14px;
+    border-radius:20px;
+    background:rgba(0,0,0,.65);
+    font-size:13px;
+}
+.controls{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:5;
+    display:flex;
+    gap:10px;
+}
+button{
+    border:0;
+    border-radius:8px;
+    padding:12px 18px;
+    font-weight:bold;
+    color:#fff;
+    background:#00a83b;
+}
+button.stop{background:#d62828}
+button:disabled{opacity:.4}
+.hint{
+    position:fixed;
+    bottom:75px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:5;
+    padding:7px 12px;
+    border-radius:8px;
+    background:rgba(0,0,0,.55);
+    font-size:12px;
+    white-space:nowrap;
+}
+</style>
 </head>
-
-
 <body>
 
+<video id="camera" autoplay playsinline muted></video>
 
-<video
-    id="camera"
-    autoplay
-    playsinline
-    muted
-></video>
+<div class="top" id="status">Camera stopped</div>
 
-
-<div id="status">
-    Camera stopped
+<div class="hint">
+    📱 Landscape • rear camera • keep the phone fixed
 </div>
-
-
-<div class="orientation">
-    📱 Keep phone in LANDSCAPE
-</div>
-
 
 <div class="controls">
-
-    <button id="start">
-        Start Camera
-    </button>
-
-    <button
-        id="stop"
-        class="stop"
-        disabled
-    >
-        Stop
-    </button>
-
+    <button id="start">Start Camera</button>
+    <button id="stop" class="stop" disabled>Stop</button>
 </div>
 
-
 <script>
-
-
-const video =
-    document.getElementById(
-        "camera"
-    );
-
-
-const startButton =
-    document.getElementById(
-        "start"
-    );
-
-
-const stopButton =
-    document.getElementById(
-        "stop"
-    );
-
-
-const status =
-    document.getElementById(
-        "status"
-    );
-
+const video = document.getElementById("camera");
+const startButton = document.getElementById("start");
+const stopButton = document.getElementById("stop");
+const statusEl = document.getElementById("status");
 
 let stream = null;
-
 let running = false;
-
 let sending = false;
 
+const canvas = document.createElement("canvas");
+canvas.width = 640;
+canvas.height = 360;
 
-const canvas =
-    document.createElement(
-        "canvas"
-    );
+function setStatus(text, color="#fff"){
+    statusEl.textContent = text;
+    statusEl.style.color = color;
+}
 
+function drawContain(ctx, video, cw, ch){
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
 
-/* =========================================================
-   SEND ONE FRAME
-   ========================================================= */
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0,0,cw,ch);
 
-async function sendFrame() {
+    if(!vw || !vh) return;
 
+    const scale = Math.min(cw/vw, ch/vh);
+    const w = vw * scale;
+    const h = vh * scale;
+    const x = (cw-w)/2;
+    const y = (ch-h)/2;
 
-    if (!running) {
+    ctx.drawImage(video, x, y, w, h);
+}
 
-        return;
-
-    }
-
-
-    if (sending) {
-
-        return;
-
-    }
-
-
-    if (
-        video.videoWidth === 0
-        ||
-        video.videoHeight === 0
-    ) {
-
-        return;
-
-    }
-
+async function sendFrame(){
+    if(!running || sending) return;
+    if(!video.videoWidth || !video.videoHeight) return;
 
     sending = true;
 
+    const ctx = canvas.getContext("2d", {alpha:false});
 
-    /*
-       16:9 output
-    */
-
-    canvas.width = 640;
-    canvas.height = 360;
-
-
-    const ctx =
-        canvas.getContext(
-            "2d"
-        );
-
-
-    /*
-       Cover the complete 16:9 frame.
-    */
-
-    ctx.drawImage(
-
+    drawContain(
+        ctx,
         video,
-
-        0,
-        0,
-
-        640,
-        360
-
+        canvas.width,
+        canvas.height
     );
 
-
-    canvas.toBlob(
-
-        async function(blob) {
-
-
-            if (!blob) {
-
-                sending = false;
-
-                return;
-
-            }
-
-
-            try {
-
-
-                const formData =
-                    new FormData();
-
-
-                formData.append(
-
-                    "image",
-
-                    blob,
-
-                    "camera.jpg"
-
-                );
-
-
-                await fetch(
-
-                    "/upload_frame",
-
-                    {
-
-                        method:
-                            "POST",
-
-                        body:
-                            formData,
-
-                        cache:
-                            "no-store"
-
-                    }
-
-                );
-
-
-            }
-
-            catch(error) {
-
-                console.log(
-                    "Upload error:",
-                    error
-                );
-
-            }
-
-
+    canvas.toBlob(async blob=>{
+        if(!blob){
             sending = false;
+            return;
+        }
 
+        try{
+            const fd = new FormData();
+            fd.append("image", blob, "camera.jpg");
 
-        },
+            await fetch("/upload_frame", {
+                method:"POST",
+                body:fd,
+                cache:"no-store"
+            });
+        }catch(e){
+            console.log("Upload error:", e);
+        }
 
-        "image/jpeg",
-
-        0.65
-
-    );
-
+        sending = false;
+    }, "image/jpeg", 0.72);
 }
 
-
-/* =========================================================
-   CAMERA LOOP
-   ========================================================= */
-
-function cameraLoop() {
-
-
-    if (!running) {
-
-        return;
-
-    }
-
+function cameraLoop(){
+    if(!running) return;
 
     sendFrame();
 
-
     setTimeout(
-
         cameraLoop,
-
-        66
-
+        Math.round(1000 / 18)
     );
-
 }
 
+startButton.onclick = async ()=>{
+    try{
+        stream = await navigator.mediaDevices.getUserMedia({
+            video:{
+                facingMode:{ideal:"environment"},
+                width:{ideal:1280},
+                height:{ideal:720},
+                frameRate:{ideal:30,max:30}
+            },
+            audio:false
+        });
 
-/* =========================================================
-   START CAMERA
-   ========================================================= */
+        video.srcObject = stream;
 
-startButton.onclick =
-    async function() {
-
-
-    try {
-
-
-        /*
-           Rear camera
-           1280x720 = 16:9
-        */
-
-        stream =
-            await navigator
-                .mediaDevices
-                .getUserMedia({
-
-                    video: {
-
-                        facingMode: {
-
-                            ideal:
-                                "environment"
-
-                        },
-
-                        width: {
-
-                            ideal:
-                                1280
-
-                        },
-
-                        height: {
-
-                            ideal:
-                                720
-
-                        }
-
-                    },
-
-                    audio: false
-
-                });
-
-
-        video.srcObject =
-            stream;
-
+        await video.play();
 
         running = true;
 
+        startButton.disabled = true;
+        stopButton.disabled = false;
 
-        startButton.disabled =
-            true;
+        setStatus(
+            "🟢 Camera streaming",
+            "#00ff55"
+        );
 
-        stopButton.disabled =
-            false;
-
-
-        status.textContent =
-            "🟢 Camera streaming";
-
-
-        status.style.color =
-            "#00ff55";
-
+        // Some mobile browsers only allow orientation lock
+        // after user interaction.
+        try{
+            if(screen.orientation && screen.orientation.lock){
+                await screen.orientation.lock("landscape");
+            }
+        }catch(e){
+            console.log("Orientation lock unavailable");
+        }
 
         cameraLoop();
 
+    }catch(error){
+        console.error(error);
 
-    }
-
-    catch(error) {
-
-
-        console.error(
-            error
+        setStatus(
+            "❌ Camera permission denied",
+            "#ff4444"
         );
-
-
-        status.textContent =
-            "❌ Camera permission denied";
-
-
-        status.style.color =
-            "#ff4444";
-
 
         alert(
-            "Camera permission allow karo."
+            "Camera permission allow karo aur phone ko LANDSCAPE me rakho."
         );
-
     }
-
 };
 
-
-/* =========================================================
-   STOP
-   ========================================================= */
-
-stopButton.onclick =
-    function() {
-
-
+stopButton.onclick = ()=>{
     running = false;
 
-
-    if (stream) {
-
-
-        stream
-            .getTracks()
-            .forEach(
-
-                track =>
-                    track.stop()
-
-            );
-
-
+    if(stream){
+        stream.getTracks().forEach(track=>track.stop());
         stream = null;
-
     }
 
+    video.srcObject = null;
 
-    video.srcObject =
-        null;
+    startButton.disabled = false;
+    stopButton.disabled = true;
 
-
-    startButton.disabled =
-        false;
-
-    stopButton.disabled =
-        true;
-
-
-    status.textContent =
-        "Camera stopped";
-
-
-    status.style.color =
-        "#fff";
-
+    setStatus("Camera stopped");
 };
-
-
 </script>
 
-
 </body>
-
 </html>
